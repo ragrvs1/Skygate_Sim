@@ -39,7 +39,8 @@ initial_state = {
     },
     'active_reports': [],  # List of active reports
     'report_id_counter': 0,  # Unique report IDs
-    'accrued_apr': []  # Reports earning APR
+    'accrued_apr': [],  # Reports earning APR
+    'token_price': 1.0  # Starting token price in arbitrary units
 }
 
 # ─────────────────────────────────────────────────────────────
@@ -112,6 +113,16 @@ def update_emission_pool(params, step, sL, s, _input):
     return 'emission_pool', s['emission_pool'] - capped_emission
 
 
+def update_token_price(params, step, sL, s, _input):
+    """Estimate token price based on remaining emission pool."""
+    total_emission = sum(r.emission for r in _input['new_reports'])
+    capped_emission = min(total_emission, s['emission_pool'])
+    new_pool = s['emission_pool'] - capped_emission
+    utilization = (params['initial_emission_pool'] - new_pool) / params['initial_emission_pool']
+    price = params['base_token_price'] * (1 + utilization)
+    return 'token_price', price
+
+
 # ─────────────────────────────────────────────────────────────
 # STEP 5: Partial State Update Blocks
 # ─────────────────────────────────────────────────────────────
@@ -125,6 +136,7 @@ psubs = [
             'report_id_counter': update_report_counter,
             'token_balances': update_token_balances,
             'emission_pool': update_emission_pool,
+            'token_price': update_token_price,
             'accrued_apr': accrue_apr_reports,
             'reports_per_step': lambda p, step, sL, s, _input: ('reports_per_step', p['reports_per_step']),
         }
@@ -155,6 +167,8 @@ sim_config = config_sim({
         'curator_reward_pct': [0.50],
         'auditor_reward_pct': [0.20],
         'governance_reward_pct': [0.10],
+        'initial_emission_pool': [initial_state['emission_pool']],
+        'base_token_price': [1.0],
     }
 })
 
@@ -185,6 +199,7 @@ def run_simulation():
     df['tokens_curators'] = df['token_balances'].apply(lambda x: x['curators'])
     df['tokens_auditors'] = df['token_balances'].apply(lambda x: x['auditors'])
     df['tokens_governance'] = df['token_balances'].apply(lambda x: x['governance'])
+    df['token_price'] = df['token_price']
     return df
 
 def plot_emission_pool(df):
@@ -222,8 +237,26 @@ def plot_cumulative_reports(df):
     plt.tight_layout()
     plt.show()
 
+
+def plot_token_price(df):
+    """Plot the predicted token price over time."""
+    plt.figure(figsize=(10, 6))
+    for rps in sorted(df['reports_per_step'].dropna().unique()):
+        group = df[df['reports_per_step'] == rps]
+        avg_price = group.groupby('timestep')['token_price'].mean()
+        plt.plot(avg_price.index, avg_price.values, label=f'{int(rps)} reports/step')
+
+    plt.title("Predicted Token Price Over Time")
+    plt.xlabel("Timestep")
+    plt.ylabel("Token Price")
+    plt.legend(title="Reports/Step")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
 if __name__ == "__main__":
     df = run_simulation()
     plot_emission_pool(df)
     plot_cumulative_reports(df)
+    plot_token_price(df)
 
