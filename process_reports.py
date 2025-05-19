@@ -1,12 +1,11 @@
-"""Report processing logic for Skygate.
-
-This module defines a helper function ``process_reports`` which is
-responsible for applying report outcomes and distributing rewards.
-The code is based on the snippet labelled "SKYGATE – CHUNK 4".
-
-The constants below are simplistic stand-ins. In a full implementation
-these would likely be provided by other modules or configuration.
-"""
+# Report processing logic for Skygate.
+#
+# This module defines a helper function ``process_reports`` which is
+# responsible for applying report outcomes and distributing rewards.
+# The code is based on the snippet labelled "SKYGATE – CHUNK 4".
+#
+# The constants below are simplistic stand-ins. In a full implementation
+# these would likely be provided by other modules or configuration.
 
 from __future__ import annotations
 
@@ -41,25 +40,24 @@ SLASH_FRACTION = 0.5
 # ---------------------------------------------------------------------------
 
 def process_reports(params: Dict[str, Any], step: int, sL: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
-    """Process all pending reports and update global state.
-
-    Parameters
-    ----------
-    params : dict
-        Simulation parameters (unused here but kept for API compatibility).
-    step : int
-        Current timestep of the simulation.
-    sL : dict
-        Previous state (unused here but part of cadCAD's API).
-    s : dict
-        Mutable simulation state containing a ``reports_pending`` list along
-        with token and staking information.
-
-    Returns
-    -------
-    dict
-        Updated state ``s`` after processing all pending reports.
-    """
+    # Process all pending reports and update global state.
+    #
+    # Parameters
+    # ----------
+    # params : dict
+    #     Simulation parameters (unused here but kept for API compatibility).
+    # step : int
+    #     Current timestep of the simulation.
+    # sL : dict
+    #     Previous state (unused here but part of cadCAD's API).
+    # s : dict
+    #     Mutable simulation state containing a ``reports_pending`` list along
+    #     with token and staking information.
+    #
+    # Returns
+    # -------
+    # dict
+    #     Updated state ``s`` after processing all pending reports.
 
     verified, rejected = 0, 0
     treasury_inflow = 0.0
