@@ -1,4 +1,4 @@
-"""Global constants and initial state for the Skygate simulation."""
+# Global constants and initial state for the Skygate simulation.
 
 # ---------- CONSTANTS ----------
 MAX_SUPPLY = 1_000_000_000  # total cap
