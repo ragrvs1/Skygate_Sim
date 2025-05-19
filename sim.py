@@ -11,8 +11,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from dataclasses import dataclass
+from math import ceil
 
 np.random.seed(0)
+
+# Minimum stake required to remain an active curator
+MIN_CURATOR_STAKE = 100
 
 @dataclass
 class Report:
@@ -121,6 +125,29 @@ def update_token_price(params, step, sL, s, _input):
     utilization = (params['initial_emission_pool'] - new_pool) / params['initial_emission_pool']
     price = params['base_token_price'] * (1 + utilization)
     return 'token_price', price
+
+
+# ─────────────────────────────────────────────────────────────
+# SKYGATE – CHUNK 6
+# Removes bankrupt / low-rep curators, adds new ones,
+# advances month counter t += 1.
+# ─────────────────────────────────────────────────────────────
+def curator_churn(params, step, sL, s):
+    """Evict low-quality curators and add newcomers as needed."""
+    # evict
+    s["curators"] = [
+        c for c in s["curators"]
+        if c["stake"] >= MIN_CURATOR_STAKE and c["rep"] > -5
+    ]
+
+    # add newcomers if needed
+    desired = ceil(len(s["reports_pending"]) * 7 / 10)  # heuristic
+    while len(s["curators"]) < desired:
+        s["curators"].append(dict(stake=MIN_CURATOR_STAKE, rep=0, risk="med"))
+
+    # advance month counter
+    s["t"] += 1
+    return s
 
 
 # ─────────────────────────────────────────────────────────────
