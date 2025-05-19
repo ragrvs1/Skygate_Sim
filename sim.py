@@ -14,6 +14,9 @@ from dataclasses import dataclass
 
 np.random.seed(0)
 
+# Constant used in the supply and price recomputation step
+PRICE_ALPHA = 0.05
+
 @dataclass
 class Report:
     """Simple container for report metadata."""
@@ -73,6 +76,34 @@ def apr_accrual_policy(params, step, sL, s):
         for report in s['accrued_apr']
     ]
     return {'apr_rewards': sum(apr_updates)}
+
+
+def recompute_supply_and_price(params, step, sL, s):
+    """Recompute circulating supply and adjust the price."""
+    prev = sL[-1] if sL else None
+
+    # locked tokens
+    stake_locked = sum(c["stake"] for c in s.get("curators", [])) + \
+                   sum(a["stake"] for a in s.get("auditors", []))
+    deposits_locked = sum(rep["deposit"] for rep in s.get("reports_pending", []))
+    gov_locked = 0  # ignore for v1
+
+    S_locked = stake_locked + deposits_locked + gov_locked
+    s["S_circ"] = s.get("S_total", 0) - s.get("S_treasury", 0) - S_locked
+
+    # utility demand
+    D_util = S_locked
+
+    if prev:
+        delta_d = D_util - prev.get("D_util", 0)
+        delta_s = s["S_circ"] - prev.get("S_circ", 0)
+        s["price"] = s.get("price", 0) * (
+            1 + PRICE_ALPHA * ((delta_d - delta_s) / prev.get("S_circ", 1))
+        )
+
+    # store for next step’s delta calc
+    s["D_util"] = D_util
+    return s
 
 # ─────────────────────────────────────────────────────────────
 # STEP 4: State Update Functions
