@@ -410,7 +410,8 @@ def update_token_price(params, step, sL, s, _input):
     capped_emission = min(total_emission, s['emission_pool'])
     new_pool = s['emission_pool'] - capped_emission
     utilization = (params['initial_emission_pool'] - new_pool) / params['initial_emission_pool']
-    price = params['base_token_price'] * (1 + utilization)
+    prev_price = s.get('token_price', params['base_token_price'])
+    price = prev_price * (1 + PRICE_ALPHA * utilization)
     return 'token_price', price
 
 
@@ -520,7 +521,31 @@ def run_simulation():
         + df['tokens_auditors']
         + df['tokens_governance']
     )
+
+    # Additional derived metrics for advanced plotting
+    df['active_curators'] = df['active_reports'].apply(lambda reps: len(reps) * 3)
+    df['D_util'] = df['tokens_curators'] + df['tokens_auditors']
+    df['S_circ'] = df['circulating_supply']
+
+    grouped = df.groupby(['reports_per_step', 'run'])
+    df['delta_d_util'] = grouped['D_util'].diff().fillna(0)
+    df['delta_s_circ'] = grouped['S_circ'].diff().fillna(0)
+    df['price_change'] = grouped['token_price'].diff().fillna(0)
+    df['delta_d_minus_s'] = df['delta_d_util'] - df['delta_s_circ']
+    df['curator_rewards'] = grouped['tokens_curators'].diff().fillna(0)
+    df['slashed_stake'] = 0.0  # placeholder; no slashing modeled
     return df
+
+
+def run_price_alpha_sweep(alphas):
+    results = []
+    for a in alphas:
+        global PRICE_ALPHA
+        PRICE_ALPHA = a
+        df = run_simulation()
+        df['price_alpha'] = a
+        results.append(df)
+    return pd.concat(results, ignore_index=True)
 
 def plot_emission_pool(df):
 
@@ -618,6 +643,72 @@ def plot_token_price(df):
     plt.tight_layout()
     plt.show()
 
+
+def plot_delta_demand_vs_supply(df):
+    plt.figure(figsize=(8, 6))
+    plt.scatter(df['delta_d_minus_s'], df['price_change'], alpha=0.5)
+    plt.title("Δ Utility Demand - Δ Supply vs Price Change")
+    plt.xlabel("ΔD_util - ΔS_circ")
+    plt.ylabel("Price Change")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_price_sensitivity(df):
+    plt.figure(figsize=(10, 6))
+    for alpha in sorted(df['price_alpha'].dropna().unique()):
+        group = df[df['price_alpha'] == alpha]
+        avg_price = group.groupby('timestep')['token_price'].mean()
+        plt.plot(avg_price.index, avg_price.values, label=f'α={alpha}')
+    plt.title("Price Sensitivity Analysis")
+    plt.xlabel("Timestep")
+    plt.ylabel("Token Price")
+    plt.legend(title="PRICE_ALPHA")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_active_curators(df):
+    plt.figure(figsize=(10, 6))
+    avg_count = df.groupby('timestep')['active_curators'].mean()
+    plt.plot(avg_count.index, avg_count.values)
+    plt.title("Active Curator Count Over Time")
+    plt.xlabel("Timestep")
+    plt.ylabel("Average Active Curators")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_stake_distribution(df):
+    plt.figure(figsize=(10, 6))
+    stakes = df['tokens_curators'] / df['active_curators'].replace(0, np.nan)
+    data = pd.DataFrame({'timestep': df['timestep'], 'stake': stakes})
+    data.boxplot(by='timestep', column='stake', grid=False)
+    plt.title("Stake Distribution Over Time")
+    plt.suptitle("")
+    plt.xlabel("Timestep")
+    plt.ylabel("Stake per Curator (approx)")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_slash_and_rewards(df):
+    plt.figure(figsize=(10, 6))
+    avg_rewards = df.groupby('timestep')['curator_rewards'].mean()
+    avg_slashed = df.groupby('timestep')['slashed_stake'].mean()
+    plt.plot(avg_rewards.index, avg_rewards.values, label='Curator Rewards')
+    plt.plot(avg_slashed.index, avg_slashed.values, label='Slashed Stake')
+    plt.title("Slashing and Reward Flows")
+    plt.xlabel("Timestep")
+    plt.ylabel("Tokens")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
 if __name__ == "__main__":
     df = run_simulation()
     plot_emission_pool(df)
@@ -625,4 +716,12 @@ if __name__ == "__main__":
     plot_circulating_supply(df)
     plot_cumulative_verified_reports(df)
     plot_token_price(df)
+    plot_delta_demand_vs_supply(df)
+    plot_active_curators(df)
+    plot_stake_distribution(df)
+    plot_slash_and_rewards(df)
+
+    # Example price sensitivity sweep
+    sweep = run_price_alpha_sweep([0.01, 0.05, 0.1])
+    plot_price_sensitivity(sweep)
 
