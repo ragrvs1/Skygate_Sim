@@ -25,7 +25,7 @@ MIN_CURATOR_STAKE = 100
 
 @dataclass
 class Report:
-    """Simple container for report metadata."""
+    # Simple container for report metadata.
     id: int
     quality: float
     emission: float
@@ -56,7 +56,7 @@ initial_state = {
 # STEP 3: Policy Functions
 # ─────────────────────────────────────────────────────────────
 def submit_report_policy(params, step, sL, s):
-    """Generate validated reports for this timestep."""
+    # Generate validated reports for this timestep.
     reports = []
     for _ in range(params['reports_per_step']):
         quality_score = np.random.uniform(50, 100)
@@ -76,7 +76,7 @@ def submit_report_policy(params, step, sL, s):
     return {'new_reports': reports}
 
 def apr_accrual_policy(params, step, sL, s):
-    """Compute APR rewards for reports that are accruing."""
+    # Compute APR rewards for reports that are accruing.
     apr_updates = [
         0.20 * report.emission / 100  # 1% of the 20% stake APR per timestep
         for report in s['accrued_apr']
@@ -85,7 +85,7 @@ def apr_accrual_policy(params, step, sL, s):
 
 
 def recompute_supply_and_price(params, step, sL, s):
-    """Recompute circulating supply and adjust the price."""
+    # Recompute circulating supply and adjust the price.
     prev = sL[-1] if sL else None
 
     # locked tokens
@@ -115,15 +115,15 @@ def recompute_supply_and_price(params, step, sL, s):
 # STEP 4: State Update Functions
 # ─────────────────────────────────────────────────────────────
 def update_active_reports(params, step, sL, s, _input):
-    """Append new reports to the active list."""
+    # Append new reports to the active list.
     return 'active_reports', s['active_reports'] + _input['new_reports']
 
 def update_report_counter(params, step, sL, s, _input):
-    """Increment the running report ID counter."""
+    # Increment the running report ID counter.
     return 'report_id_counter', s['report_id_counter'] + len(_input['new_reports'])
 
 def update_token_balances(params, step, sL, s, _input):
-    """Distribute rewards to stakeholders based on emission."""
+    # Distribute rewards to stakeholders based on emission.
     token_balances = s['token_balances'].copy()
     for report in _input['new_reports']:
         emission = report.emission
@@ -134,24 +134,24 @@ def update_token_balances(params, step, sL, s, _input):
     return 'token_balances', token_balances
 
 def update_apr_rewards(params, step, sL, s, _input):
-    """Apply APR rewards to submitters."""
+    # Apply APR rewards to submitters.
     token_balances = s['token_balances'].copy()
     token_balances['submitters'] += _input['apr_rewards']
     return 'token_balances', token_balances
 
 def accrue_apr_reports(params, step, sL, s, _input):
-    """Track reports that continue accruing APR."""
+    # Track reports that continue accruing APR.
     return 'accrued_apr', s['accrued_apr'] + _input['new_reports']
 
 def update_emission_pool(params, step, sL, s, _input):
-    """Decrease the emission pool without letting it go negative."""
+    # Decrease the emission pool without letting it go negative.
     total_emission = sum(r.emission for r in _input['new_reports'])
     capped_emission = min(total_emission, s['emission_pool'])
     return 'emission_pool', s['emission_pool'] - capped_emission
 
 
 def update_token_price(params, step, sL, s, _input):
-    """Estimate token price based on remaining emission pool."""
+    # Estimate token price based on remaining emission pool.
     total_emission = sum(r.emission for r in _input['new_reports'])
     capped_emission = min(total_emission, s['emission_pool'])
     new_pool = s['emission_pool'] - capped_emission
@@ -166,7 +166,7 @@ def update_token_price(params, step, sL, s, _input):
 # advances month counter t += 1.
 # ─────────────────────────────────────────────────────────────
 def curator_churn(params, step, sL, s):
-    """Evict low-quality curators and add newcomers as needed."""
+    # Evict low-quality curators and add newcomers as needed.
     # evict
     s["curators"] = [
         c for c in s["curators"]
@@ -236,7 +236,7 @@ sim_config = config_sim({
 # STEP 7: Run Simulation
 # ─────────────────────────────────────────────────────────────
 def run_simulation():
-    """Execute the cadCAD simulation and return a results DataFrame."""
+    # Execute the cadCAD simulation and return a results DataFrame.
     exec_context = ExecutionContext(context=ExecutionMode().single_mode)
     configurations = [
         Configuration(
@@ -269,7 +269,7 @@ def run_simulation():
     return df
 
 def plot_emission_pool(df):
-    """Plot the remaining emission pool over time with error bands."""
+
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps]
@@ -294,7 +294,7 @@ def plot_emission_pool(df):
 
 
 def plot_cumulative_reports(df):
-    """Plot how many reports have been submitted over time."""
+    # Plot how many reports have been submitted over time.
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps].copy()
@@ -349,7 +349,7 @@ def plot_cumulative_verified_reports(df):
 
 
 def plot_token_price(df):
-    """Plot the predicted token price over time."""
+    # Plot the predicted token price over time.
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps]

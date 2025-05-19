@@ -4,46 +4,14 @@
 
 # Skygate Simulation
 
-This repository contains a simple **cadCAD** simulation that models token emissions and APR rewards for different stakeholder groups. The simulation is implemented in a single Python script: `sim.py`.
 
-## Requirements
-
-The project requires Python 3.11 or newer. Install dependencies via `pip`:
-
-```bash
-pip install cadCAD pandas numpy matplotlib
-```
-
-## Running the Simulation
-
-Execute the simulation by running:
-
-```bash
-python sim.py
-```
-
-The script will run multiple Monte Carlo simulations and generate several plots:
-
-1. **Emission Pool Over Time** – average remaining tokens with one standard deviation error bands.
-2. **Cumulative Reports Over Time** – average number of reports submitted.
-3. **Circulating Supply Over Time** – tokens distributed to stakeholders.
-4. **Cumulative Verified Reports Over Time** – running total of verified reports.
-5. **Predicted Token Price Over Time** – simple price estimate based on emission pool utilization.
-
-## Project Structure
-
-- `sim.py` – defines the simulation configuration, policies, and plotting utilities.
-- `README.md` – project overview and usage instructions.
-
-Feel free to modify parameters in `sim.py` (such as the number of reports per step) to explore different scenarios.
 
 # ===== File: curation.py =====
 
-"""Utilities for assigning curators to pending reports.
-
-This module implements weighted random assignment of curators based on
-stake and reputation, as well as recording their hidden votes.
-"""
+# Utilities for assigning curators to pending reports.
+#
+# This module implements weighted random assignment of curators based on
+# stake and reputation, as well as recording their hidden votes.
 
 import random
 from typing import Dict, Any, List
@@ -56,12 +24,12 @@ N_CURATORS_PER_CASE = 7
 
 
 def weight(agent: Dict[str, Any]) -> float:
-    """Return the selection weight for a curator agent."""
+    # Return the selection weight for a curator agent.
     return agent["stake"] * (1 + BETA_REP_WEIGHT * max(0, agent["rep"]))
 
 
 def assign_curators(params: Dict[str, Any], step: int, sL: List[Any], s: Dict[str, Any]) -> Dict[str, Any]:
-    """Assign curators to pending reports and record hidden votes."""
+    # Assign curators to pending reports and record hidden votes.
     rng: random.Random = params["rng"]
     for rep in s["reports_pending"]:
         population = s["curators"]
@@ -76,7 +44,7 @@ def assign_curators(params: Dict[str, Any], step: int, sL: List[Any], s: Dict[st
 
 # ===== File: initial_state.py =====
 
-"""Global constants and initial state for the Skygate simulation."""
+# Global constants and initial state for the Skygate simulation.
 
 # ---------- CONSTANTS ----------
 MAX_SUPPLY = 1_000_000_000  # total cap
@@ -108,17 +76,16 @@ state = dict(
 
 # ===== File: process_reports.py =====
 
-"""Report processing logic for Skygate.
+# Report processing logic for Skygate.
+#
+# This module defines a helper function ``process_reports`` which is
+# responsible for applying report outcomes and distributing rewards.
+# The code is based on the snippet labelled "SKYGATE – CHUNK 4".
+#
+# The constants below are simplistic stand-ins. In a full implementation
+# these would likely be provided by other modules or configuration.
 
-This module defines a helper function ``process_reports`` which is
-responsible for applying report outcomes and distributing rewards.
-The code is based on the snippet labelled "SKYGATE – CHUNK 4".
-
-The constants below are simplistic stand-ins. In a full implementation
-these would likely be provided by other modules or configuration.
-"""
-
-from __future__ import annotations
+# from __future__ import annotations
 
 from typing import Any, Dict, List
 
@@ -151,25 +118,24 @@ SLASH_FRACTION = 0.5
 # ---------------------------------------------------------------------------
 
 def process_reports(params: Dict[str, Any], step: int, sL: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
-    """Process all pending reports and update global state.
-
-    Parameters
-    ----------
-    params : dict
-        Simulation parameters (unused here but kept for API compatibility).
-    step : int
-        Current timestep of the simulation.
-    sL : dict
-        Previous state (unused here but part of cadCAD's API).
-    s : dict
-        Mutable simulation state containing a ``reports_pending`` list along
-        with token and staking information.
-
-    Returns
-    -------
-    dict
-        Updated state ``s`` after processing all pending reports.
-    """
+    # Process all pending reports and update global state.
+    #
+    # Parameters
+    # ----------
+    # params : dict
+    #     Simulation parameters (unused here but kept for API compatibility).
+    # step : int
+    #     Current timestep of the simulation.
+    # sL : dict
+    #     Previous state (unused here but part of cadCAD's API).
+    # s : dict
+    #     Mutable simulation state containing a ``reports_pending`` list along
+    #     with token and staking information.
+    #
+    # Returns
+    # -------
+    # dict
+    #     Updated state ``s`` after processing all pending reports.
 
     verified, rejected = 0, 0
     treasury_inflow = 0.0
@@ -230,11 +196,10 @@ def process_reports(params: Dict[str, Any], step: int, sL: Dict[str, Any], s: Di
 
 # ===== File: report_process.py =====
 
-"""Exogenous process for report arrivals.
-
-This module implements the monthly arrival of witness reports based on a
-demand curve.
-"""
+# Exogenous process for report arrivals.
+#
+# This module implements the monthly arrival of witness reports based on a
+# demand curve.
 
 from math import ceil
 from typing import List, Dict, Any
@@ -247,27 +212,26 @@ WITNESS_DEPOSIT: int = 10
 
 
 def report_arrival(params: Dict[str, Any], step: int, sL: List[dict], s: dict) -> Dict[str, List[Dict[str, Any]]]:
-    """Generate new witness reports for the current timestep.
-
-    Parameters
-    ----------
-    params : dict
-        Parameters provided by cadCAD, must include a random number generator
-        under ``rng`` and a ``truth_ratio`` controlling the fraction of
-        legitimate reports.
-    step : int
-        Current cadCAD step (unused).
-    sL : list
-        State history (unused).
-    s : dict
-        Current state dictionary. Expects ``t`` indicating the month index.
-
-    Returns
-    -------
-    dict
-        Dictionary with key ``"new_reports"`` mapping to the list of generated
-        reports.
-    """
+    # Generate new witness reports for the current timestep.
+    #
+    # Parameters
+    # ----------
+    # params : dict
+    #     Parameters provided by cadCAD, must include a random number generator
+    #     under ``rng`` and a ``truth_ratio`` controlling the fraction of
+    #     legitimate reports.
+    # step : int
+    #     Current cadCAD step (unused).
+    # sL : list
+    #     State history (unused).
+    # s : dict
+    #     Current state dictionary. Expects ``t`` indicating the month index.
+    #
+    # Returns
+    # -------
+    # dict
+    #     Dictionary with key ``"new_reports"`` mapping to the list of generated
+    #     reports.
     t = s["t"]
     R_t = ceil(100 * (1 + GROWTH_RATE) ** t)  # eq (1)
     new_reports = [
@@ -283,7 +247,7 @@ def report_arrival(params: Dict[str, Any], step: int, sL: List[dict], s: dict) -
 
 
 def update_pending_reports(params: Dict[str, Any], step: int, sL: List[dict], s: dict, _input: dict) -> dict:
-    """Append newly arrived reports to the pending queue."""
+    # Append newly arrived reports to the pending queue.
     s["reports_pending"].extend(_input["new_reports"])
     return s
 
@@ -315,7 +279,7 @@ MIN_CURATOR_STAKE = 100
 
 @dataclass
 class Report:
-    """Simple container for report metadata."""
+    # Simple container for report metadata.
     id: int
     quality: float
     emission: float
@@ -346,7 +310,7 @@ initial_state = {
 # STEP 3: Policy Functions
 # ─────────────────────────────────────────────────────────────
 def submit_report_policy(params, step, sL, s):
-    """Generate validated reports for this timestep."""
+    # Generate validated reports for this timestep.
     reports = []
     for _ in range(params['reports_per_step']):
         quality_score = np.random.uniform(50, 100)
@@ -366,7 +330,7 @@ def submit_report_policy(params, step, sL, s):
     return {'new_reports': reports}
 
 def apr_accrual_policy(params, step, sL, s):
-    """Compute APR rewards for reports that are accruing."""
+    # Compute APR rewards for reports that are accruing.
     apr_updates = [
         0.20 * report.emission / 100  # 1% of the 20% stake APR per timestep
         for report in s['accrued_apr']
@@ -375,7 +339,7 @@ def apr_accrual_policy(params, step, sL, s):
 
 
 def recompute_supply_and_price(params, step, sL, s):
-    """Recompute circulating supply and adjust the price."""
+    # Recompute circulating supply and adjust the price.
     prev = sL[-1] if sL else None
 
     # locked tokens
@@ -405,15 +369,15 @@ def recompute_supply_and_price(params, step, sL, s):
 # STEP 4: State Update Functions
 # ─────────────────────────────────────────────────────────────
 def update_active_reports(params, step, sL, s, _input):
-    """Append new reports to the active list."""
+    # Append new reports to the active list.
     return 'active_reports', s['active_reports'] + _input['new_reports']
 
 def update_report_counter(params, step, sL, s, _input):
-    """Increment the running report ID counter."""
+    # Increment the running report ID counter.
     return 'report_id_counter', s['report_id_counter'] + len(_input['new_reports'])
 
 def update_token_balances(params, step, sL, s, _input):
-    """Distribute rewards to stakeholders based on emission."""
+    # Distribute rewards to stakeholders based on emission.
     token_balances = s['token_balances'].copy()
     for report in _input['new_reports']:
         emission = report.emission
@@ -424,24 +388,24 @@ def update_token_balances(params, step, sL, s, _input):
     return 'token_balances', token_balances
 
 def update_apr_rewards(params, step, sL, s, _input):
-    """Apply APR rewards to submitters."""
+    # Apply APR rewards to submitters.
     token_balances = s['token_balances'].copy()
     token_balances['submitters'] += _input['apr_rewards']
     return 'token_balances', token_balances
 
 def accrue_apr_reports(params, step, sL, s, _input):
-    """Track reports that continue accruing APR."""
+    # Track reports that continue accruing APR.
     return 'accrued_apr', s['accrued_apr'] + _input['new_reports']
 
 def update_emission_pool(params, step, sL, s, _input):
-    """Decrease the emission pool without letting it go negative."""
+    # Decrease the emission pool without letting it go negative.
     total_emission = sum(r.emission for r in _input['new_reports'])
     capped_emission = min(total_emission, s['emission_pool'])
     return 'emission_pool', s['emission_pool'] - capped_emission
 
 
 def update_token_price(params, step, sL, s, _input):
-    """Estimate token price based on remaining emission pool."""
+    # Estimate token price based on remaining emission pool.
     total_emission = sum(r.emission for r in _input['new_reports'])
     capped_emission = min(total_emission, s['emission_pool'])
     new_pool = s['emission_pool'] - capped_emission
@@ -456,7 +420,7 @@ def update_token_price(params, step, sL, s, _input):
 # advances month counter t += 1.
 # ─────────────────────────────────────────────────────────────
 def curator_churn(params, step, sL, s):
-    """Evict low-quality curators and add newcomers as needed."""
+    # Evict low-quality curators and add newcomers as needed.
     # evict
     s["curators"] = [
         c for c in s["curators"]
@@ -526,7 +490,7 @@ sim_config = config_sim({
 # STEP 7: Run Simulation
 # ─────────────────────────────────────────────────────────────
 def run_simulation():
-    """Execute the cadCAD simulation and return a results DataFrame."""
+    # Execute the cadCAD simulation and return a results DataFrame.
     exec_context = ExecutionContext(context=ExecutionMode().single_mode)
     configurations = [
         Configuration(
@@ -559,7 +523,7 @@ def run_simulation():
     return df
 
 def plot_emission_pool(df):
-    """Plot the remaining emission pool over time with error bands."""
+
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps]
@@ -584,7 +548,7 @@ def plot_emission_pool(df):
 
 
 def plot_cumulative_reports(df):
-    """Plot how many reports have been submitted over time."""
+    # Plot how many reports have been submitted over time.
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps].copy()
@@ -639,7 +603,7 @@ def plot_cumulative_verified_reports(df):
 
 
 def plot_token_price(df):
-    """Plot the predicted token price over time."""
+    # Plot the predicted token price over time.
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps]

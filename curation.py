@@ -1,8 +1,7 @@
-"""Utilities for assigning curators to pending reports.
-
-This module implements weighted random assignment of curators based on
-stake and reputation, as well as recording their hidden votes.
-"""
+# Utilities for assigning curators to pending reports.
+#
+# This module implements weighted random assignment of curators based on
+# stake and reputation, as well as recording their hidden votes.
 
 import random
 from typing import Dict, Any, List
@@ -15,12 +14,12 @@ N_CURATORS_PER_CASE = 7
 
 
 def weight(agent: Dict[str, Any]) -> float:
-    """Return the selection weight for a curator agent."""
+    # Return the selection weight for a curator agent.
     return agent["stake"] * (1 + BETA_REP_WEIGHT * max(0, agent["rep"]))
 
 
 def assign_curators(params: Dict[str, Any], step: int, sL: List[Any], s: Dict[str, Any]) -> Dict[str, Any]:
-    """Assign curators to pending reports and record hidden votes."""
+    # Assign curators to pending reports and record hidden votes.
     rng: random.Random = params["rng"]
     for rep in s["reports_pending"]:
         population = s["curators"]
