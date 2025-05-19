@@ -22,10 +22,13 @@ Execute the simulation by running:
 python sim.py
 ```
 
-The script will run multiple Monte Carlo simulations and generate two plots:
+The script will run multiple Monte Carlo simulations and generate several plots:
 
-1. **Emission Pool Over Time** – average remaining tokens in the emission pool.
+1. **Emission Pool Over Time** – average remaining tokens with one standard deviation error bands.
 2. **Cumulative Reports Over Time** – average number of reports submitted.
+3. **Circulating Supply Over Time** – tokens distributed to stakeholders.
+4. **Cumulative Verified Reports Over Time** – running total of verified reports.
+5. **Predicted Token Price Over Time** – simple price estimate based on emission pool utilization.
 
 ## Project Structure
 
@@ -304,9 +307,8 @@ from math import ceil
 np.random.seed(0)
 
 
-# Constant used in the supply and price recomputation step
+# Sensitivity factor used when recomputing price (unused in this simplified model)
 PRICE_ALPHA = 0.05
-=======
 # Minimum stake required to remain an active curator
 MIN_CURATOR_STAKE = 100
 
@@ -548,15 +550,29 @@ def run_simulation():
     df['tokens_auditors'] = df['token_balances'].apply(lambda x: x['auditors'])
     df['tokens_governance'] = df['token_balances'].apply(lambda x: x['governance'])
     df['token_price'] = df['token_price']
+    df['circulating_supply'] = (
+        df['tokens_submitters']
+        + df['tokens_curators']
+        + df['tokens_auditors']
+        + df['tokens_governance']
+    )
     return df
 
 def plot_emission_pool(df):
-    """Plot the remaining emission pool over time."""
+    """Plot the remaining emission pool over time with error bands."""
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps]
-        avg_emission = group.groupby('timestep')['emission_pool'].mean()
+        grouped = group.groupby('timestep')['emission_pool']
+        avg_emission = grouped.mean()
+        std_emission = grouped.std()
         plt.plot(avg_emission.index, avg_emission.values, label=f'{int(rps)} reports/step')
+        plt.fill_between(
+            avg_emission.index,
+            avg_emission - std_emission,
+            avg_emission + std_emission,
+            alpha=0.2,
+        )
 
     plt.title("Emission Pool Over Time (Monte Carlo Averaged)")
     plt.xlabel("Timestep")
@@ -586,6 +602,42 @@ def plot_cumulative_reports(df):
     plt.show()
 
 
+def plot_circulating_supply(df):
+    """Plot circulating token supply over time."""
+    plt.figure(figsize=(10, 6))
+    for rps in sorted(df['reports_per_step'].dropna().unique()):
+        group = df[df['reports_per_step'] == rps]
+        avg_supply = group.groupby('timestep')['circulating_supply'].mean()
+        plt.plot(avg_supply.index, avg_supply.values, label=f'{int(rps)} reports/step')
+
+    plt.title("Circulating Supply Over Time")
+    plt.xlabel("Timestep")
+    plt.ylabel("Average Circulating Supply")
+    plt.legend(title="Reports/Step")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_cumulative_verified_reports(df):
+    """Plot cumulative count of verified reports over time."""
+    plt.figure(figsize=(10, 6))
+    for rps in sorted(df['reports_per_step'].dropna().unique()):
+        group = df[df['reports_per_step'] == rps].copy()
+        group['verified'] = group['active_reports'].apply(lambda reps: sum(r.validated for r in reps))
+        group['cumulative'] = group.groupby('run')['verified'].cumsum()
+        avg_cumulative = group.groupby('timestep')['cumulative'].mean()
+        plt.plot(avg_cumulative.index, avg_cumulative.values, label=f'{int(rps)} reports/step')
+
+    plt.title("Cumulative Verified Reports Over Time")
+    plt.xlabel("Timestep")
+    plt.ylabel("Average Cumulative Verified Reports")
+    plt.legend(title="Reports/Step")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_token_price(df):
     """Plot the predicted token price over time."""
     plt.figure(figsize=(10, 6))
@@ -606,5 +658,7 @@ if __name__ == "__main__":
     df = run_simulation()
     plot_emission_pool(df)
     plot_cumulative_reports(df)
+    plot_circulating_supply(df)
+    plot_cumulative_verified_reports(df)
     plot_token_price(df)
 

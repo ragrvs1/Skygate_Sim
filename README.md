@@ -18,10 +18,13 @@ Execute the simulation by running:
 python sim.py
 ```
 
-The script will run multiple Monte Carlo simulations and generate two plots:
+The script will run multiple Monte Carlo simulations and generate several plots:
 
-1. **Emission Pool Over Time** – average remaining tokens in the emission pool.
+1. **Emission Pool Over Time** – average remaining tokens with one standard deviation error bands.
 2. **Cumulative Reports Over Time** – average number of reports submitted.
+3. **Circulating Supply Over Time** – tokens distributed to stakeholders.
+4. **Cumulative Verified Reports Over Time** – running total of verified reports.
+5. **Predicted Token Price Over Time** – simple price estimate based on emission pool utilization.
 
 ## Project Structure
 
