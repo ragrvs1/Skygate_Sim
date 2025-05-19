@@ -313,7 +313,7 @@ def plot_cumulative_reports(df):
 
 
 def plot_circulating_supply(df):
-    """Plot circulating token supply over time."""
+    # Plot circulating token supply over time.
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps]
@@ -330,7 +330,7 @@ def plot_circulating_supply(df):
 
 
 def plot_cumulative_verified_reports(df):
-    """Plot cumulative count of verified reports over time."""
+    # Plot cumulative count of verified reports over time.
     plt.figure(figsize=(10, 6))
     for rps in sorted(df['reports_per_step'].dropna().unique()):
         group = df[df['reports_per_step'] == rps].copy()
